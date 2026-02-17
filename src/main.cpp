@@ -1,6 +1,5 @@
 #include "ElfHandler.hpp"
-#include <iomanip>
-#include <iostream>
+#include "Disassembler.hpp"
 
 int main(int argc, char* argv[]){
     if(argc != 4){
@@ -12,7 +11,7 @@ int main(int argc, char* argv[]){
     uint64_t vAddr = std::stoull(argv[2], nullptr, 16);
     size_t length = std::stoull(argv[3]);
 
-    std::cout << "[*] Loading: " << filename << "..." << std::endl;
+    std::cout << "[*] Loading: " << filename << std::endl;
     ElfHandler elf(filename);
 
     if(!elf.isValid()){
@@ -20,7 +19,7 @@ int main(int argc, char* argv[]){
         return 1;
     }
 
-    std::cout << "Extracting " << length << " bytes from " << std::hex << "0x" << vAddr << "..." << std::endl;
+    std::cout << "[*] Extracting " << length << " bytes from " << std::hex << "0x" << vAddr << std::endl;
     auto data = elf.getData(vAddr, length);
 
     if(!data){
@@ -28,16 +27,17 @@ int main(int argc, char* argv[]){
         return 1;
     }
 
-    //print dump
-    std::cout << "[+] Data extacted" << std::endl;
-    std::cout << std::hex << std::setfill('0');
+    std::span<const uint8_t> raw_bytes = *data;
 
-    for(size_t i = 0; i < data->size(); i++){
-        std::cout << std::setw(2) << (int)(*data)[i] << " ";
-        if((i + 1) % 16 == 0){
-            std::cout << "\n";
-        }
+    Disassembler disasm;
+    if(!disasm.is_valid_instruction()) return 1;
+
+    std::cout << "[*] Disassembling " << length << " bytes at 0x" << std::hex << vAddr << "\n\n";
+    auto instructions = disasm.disassemble(raw_bytes, vAddr);
+
+    for(const auto& instr: instructions){
+        std::cout << "0x" << std::hex << instr.address << ": " << instr.mnemonic << " " << instr.op_str << std::endl;
     }
-    std::cout << "\n";
+
     return 0;
 }

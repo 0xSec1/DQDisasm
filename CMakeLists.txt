@@ -17,6 +17,7 @@ endif()
 set(SOURCES
     src/main.cpp
     src/ElfHandler.cpp
+    src/Disassembler.cpp
 )
 
 add_executable(dqdisasm ${SOURCES})
